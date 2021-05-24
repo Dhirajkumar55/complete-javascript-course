@@ -117,3 +117,7 @@ h1 {
 .label-score {
   margin-bottom: 2rem;
 }
+
+.green{
+  background-color: rgba(0, 128, 0, 0.582);
+}

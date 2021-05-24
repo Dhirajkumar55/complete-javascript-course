@@ -61,6 +61,58 @@ const inputLoanAmount = document.querySelector('.form__input--loan-amount');
 const inputCloseUsername = document.querySelector('.form__input--user');
 const inputClosePin = document.querySelector('.form__input--pin');
 
+
+
+
+const printMove = function (mov) {
+  containerMovements.innerHTML = '';
+  mov.forEach(function (amt, idx, arr) {
+    const type = amt > 0? 'deposit':'withdrawal';  
+    const html = `<div class="movements__row">
+    <div class="movements__type movements__type--${type}">${idx + 1} deposit</div>
+    <div class="movements__value">${amt}€</div>
+  </div>`;
+    containerMovements.insertAdjacentHTML('afterbegin', html);
+  });
+}
+
+printMove(account1.movements);
+
+// const user = 'hello dhiraj'
+
+// const userName = user.toLowerCase().split(" ").map((name) => name[0]).join("");
+
+// console.log(userName);
+
+const createUsername = function (accs) {
+  accs.forEach((acc) => {
+    acc.username = acc.owner.toLowerCase().split(" ").map((name) => name[0]).join("");
+  });  
+};
+
+createUsername(accounts);
+console.log(accounts);
+
+const calcBalance = function(mov) {
+  const balance =  mov.reduce((acc, amt, idx) => {
+    return acc + amt;
+  }, 0);
+  const html = `${balance}€`;
+  labelBalance.innerText = html;
+}
+
+calcBalance(account1.movements);
+
+const calcSummary = function (mov) {
+  const deposit = mov.filter(amt => amt > 0).reduce((acc, amt) => acc + amt, 0);
+  const withdrawl = mov.filter(amt => amt < 0).reduce((acc, amt) => acc + amt, 0);
+  const interest = mov.filter(amt => amt > 0).map(amt => amt*0.012).filter(int => int > 1).reduce((acc, amt) => acc + amt, 0);
+  labelSumIn.innerText = `${deposit}€`;
+  labelSumOut.innerText = `${withdrawl}€`;
+  labelSumInterest.innerText = `${interest}€`;
+};
+
+calcSummary(account1.movements);
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 // LECTURES
@@ -74,3 +126,91 @@ const currencies = new Map([
 const movements = [200, 450, -400, 3000, -650, -130, 70, 1300];
 
 /////////////////////////////////////////////////
+
+/*
+for (const i of movements) {
+  if (movements > 0) {
+    console.log(`Amount ${i} has been credited to your account`);
+  }
+  else {
+    console.log(`Amount ${Math.abs(i)} has been withdrawn from your account`);
+  }
+}
+
+// counter implementation
+
+for (const [i,amt] of movements.entries()) {
+  if (movements > 0) {
+    console.log(`${i+1}: Amount ${amt} has been credited to your account`);
+  }
+  else {
+    console.log(`${i+1}: Amount ${Math.abs(amt)} has been withdrawn from your account`);
+  }
+}
+
+//for each loop
+console.log('For Each Loop');
+movements.forEach((amt, i, arr) => {
+  if (movements > 0) {
+    console.log(`${i+1}: Amount ${amt} has been credited to your account`);
+  }
+  else {
+    console.log(`${i+1}: Amount ${Math.abs(amt)} has been withdrawn from your account`);
+  }
+});
+
+// for each for maps
+
+currencies.forEach((val, key, map) => {
+  console.log(`${key}: ${val}`);
+});
+
+// for each for sets
+
+const set1 = new Set(['USD','EUR','GBP',]);
+
+set1.forEach((val, key, set1) => {
+  console.log(`${val}`);
+});
+
+*/
+
+const euroToUsd = 1.1;
+
+
+//map
+const mov1 = movements.map((amt,idx,arr) => {
+  
+  return `${idx}: ${amt * euroToUsd}`;
+});
+
+console.log(movements);
+console.log(mov1);
+
+// filter
+const deposits = movements.filter((amt) => {
+  return amt > 0;
+})
+
+console.log(deposits);
+
+const withdrawls = movements.filter(amt => amt < 0);
+
+console.log(withdrawls);
+
+// reduce
+
+// const balance = movements.reduce((acc, amt, idx) => {
+//   return acc + amt;
+// },0);
+
+// console.log(balance);
+
+
+
+
+// const euroToinr = 89.07;
+
+// const depositIninr = movements.map(amt => amt * euroToinr).filter(amt => amt > 0).reduce((acc, amt) => acc + amt, 0);
+// console.log(depositIninr);
+
