@@ -61,22 +61,37 @@ const inputLoanAmount = document.querySelector('.form__input--loan-amount');
 const inputCloseUsername = document.querySelector('.form__input--user');
 const inputClosePin = document.querySelector('.form__input--pin');
 
+const createUsername = function (accs) {
+  accs.forEach(acc => {
+    acc.username = acc.owner
+      .toLowerCase()
+      .split(' ')
+      .map(name => name[0])
+      .join('');
+  });
+};
 
+createUsername(accounts);
+console.log(accounts);
 
+let currentUser;
 
-const printMove = function (mov) {
+// Display transactions
+
+const printMove = function (movements, sort = false) {
+  const mov = sort ? movements.slice().sort((a, b) => a > b) : movements;
   containerMovements.innerHTML = '';
-  mov.forEach(function (amt, idx, arr) {
-    const type = amt > 0? 'deposit':'withdrawal';  
+  mov.forEach(function (amt, idx) {
+    const type = amt > 0 ? 'deposit' : 'withdrawal';
     const html = `<div class="movements__row">
-    <div class="movements__type movements__type--${type}">${idx + 1} deposit</div>
+    <div class="movements__type movements__type--${type}">${
+      idx + 1
+    } deposit</div>
     <div class="movements__value">${amt}€</div>
   </div>`;
     containerMovements.insertAdjacentHTML('afterbegin', html);
   });
-}
-
-printMove(account1.movements);
+};
 
 // const user = 'hello dhiraj'
 
@@ -84,35 +99,110 @@ printMove(account1.movements);
 
 // console.log(userName);
 
-const createUsername = function (accs) {
-  accs.forEach((acc) => {
-    acc.username = acc.owner.toLowerCase().split(" ").map((name) => name[0]).join("");
-  });  
-};
+// Disaplay Balance
 
-createUsername(accounts);
-console.log(accounts);
-
-const calcBalance = function(mov) {
-  const balance =  mov.reduce((acc, amt, idx) => {
+const calcBalance = function (account) {
+  account.balance = account.movements.reduce((acc, amt, idx) => {
     return acc + amt;
   }, 0);
-  const html = `${balance}€`;
+  const html = `${account.balance}€`;
   labelBalance.innerText = html;
-}
+};
 
-calcBalance(account1.movements);
+//Display Summary
 
-const calcSummary = function (mov) {
-  const deposit = mov.filter(amt => amt > 0).reduce((acc, amt) => acc + amt, 0);
-  const withdrawl = mov.filter(amt => amt < 0).reduce((acc, amt) => acc + amt, 0);
-  const interest = mov.filter(amt => amt > 0).map(amt => amt*0.012).filter(int => int > 1).reduce((acc, amt) => acc + amt, 0);
+const calcSummary = function (user) {
+  const deposit = user.movements
+    .filter(amt => amt > 0)
+    .reduce((acc, amt) => acc + amt, 0);
+  const withdrawl = user.movements
+    .filter(amt => amt < 0)
+    .reduce((acc, amt) => acc + amt, 0);
+  const interest = user.movements
+    .filter(amt => amt > 0)
+    .map(amt => (amt * user.interestRate) / 100)
+    .filter(int => int > 1)
+    .reduce((acc, amt) => acc + amt, 0);
   labelSumIn.innerText = `${deposit}€`;
   labelSumOut.innerText = `${withdrawl}€`;
   labelSumInterest.innerText = `${interest}€`;
 };
 
-calcSummary(account1.movements);
+const updateUI = function (user) {
+  printMove(user.movements);
+  calcBalance(user);
+  calcSummary(user);
+};
+
+//Login
+
+btnLogin.addEventListener('click', function (e) {
+  e.preventDefault();
+  currentUser = accounts.find(acc => acc.username === inputLoginUsername.value);
+  console.log(currentUser);
+
+  if (currentUser?.pin === Number(inputLoginPin.value)) {
+    inputLoginUsername.value = inputLoginPin.value = '';
+    labelWelcome.innerText = `Welcome back, ${currentUser.owner.split(' ')[0]}`;
+    containerApp.style.opacity = 100;
+    updateUI(currentUser);
+  }
+});
+
+let receiverAcc;
+btnTransfer.addEventListener('click', function (e) {
+  e.preventDefault();
+  receiverAcc = accounts.find(acc => acc.username === inputTransferTo.value);
+  console.log(receiverAcc);
+
+  if (
+    receiverAcc?.username === inputTransferTo.value &&
+    currentUser !== receiverAcc
+  ) {
+    const transferAmt = inputTransferAmount.value;
+    if (transferAmt > 0 && transferAmt < currentUser.balance) {
+      currentUser.movements.push(-1 * transferAmt);
+      receiverAcc.movements.push(1 * transferAmt);
+      updateUI(currentUser);
+    }
+    inputTransferAmount.value = inputTransferTo.value = '';
+  }
+});
+
+btnClose.addEventListener('click', function (e) {
+  e.preventDefault();
+  console.log('clicked');
+  if (
+    currentUser.username === inputCloseUsername.value &&
+    currentUser.pin === Number(inputClosePin.value)
+  ) {
+    console.log('entered');
+    const index = accounts.findIndex(
+      acc => acc.username === currentUser.username
+    );
+    accounts.splice(index, 1);
+
+    containerApp.style.opacity = 0;
+  }
+  inputCloseUsername.value = inputClosePin.value = '';
+});
+
+btnLoan.addEventListener('click', e => {
+  e.preventDefault();
+  const amt = inputLoanAmount.value;
+  if (amt > 0 && currentUser.movements.some(amount => amount >= amt * 0.1)) {
+    currentUser.movements.push(1 * amt);
+    updateUI(currentUser);
+  }
+  inputLoanAmount.value = '';
+});
+
+let isSorted = false;
+btnSort.addEventListener('click', e => {
+  e.preventDefault();
+  printMove(currentUser.movements, !isSorted);
+  isSorted = !isSorted;
+});
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 // LECTURES
@@ -177,10 +267,8 @@ set1.forEach((val, key, set1) => {
 
 const euroToUsd = 1.1;
 
-
 //map
-const mov1 = movements.map((amt,idx,arr) => {
-  
+const mov1 = movements.map((amt, idx, arr) => {
   return `${idx}: ${amt * euroToUsd}`;
 });
 
@@ -188,9 +276,9 @@ console.log(movements);
 console.log(mov1);
 
 // filter
-const deposits = movements.filter((amt) => {
+const deposits = movements.filter(amt => {
   return amt > 0;
-})
+});
 
 console.log(deposits);
 
@@ -206,11 +294,79 @@ console.log(withdrawls);
 
 // console.log(balance);
 
-
-
-
 // const euroToinr = 89.07;
 
 // const depositIninr = movements.map(amt => amt * euroToinr).filter(amt => amt > 0).reduce((acc, amt) => acc + amt, 0);
 // console.log(depositIninr);
 
+//find returns only first element matching the expression.
+const first = movements.find(amt => amt < 0);
+console.log(first);
+
+const account = accounts.find(acc => acc.owner === 'Jessica Davis');
+console.log(account);
+
+// movements.slice(1, 2);
+// console.log(movements);
+// movements.splice(1, 1);
+// console.log(movements);
+
+// includes == checks only for a quality or does equality checks
+
+const isThere = movements.includes(-130);
+console.log(isThere);
+
+// some == returns true if there is any value matching the given condition
+
+const isThereAny = movements.some(amt => amt > 5000); // checking if there is any transaction greater than 5000
+console.log(isThereAny);
+
+// every == returns true if and only if all of the elements satiify the given condition via call back function
+
+const isThereEvery = account4.movements.every(amt => amt > 0);
+console.log(isThereEvery);
+
+//DNT (DO NOT REPEAT YOURSELF)
+
+const cond = amt => amt > 0;
+console.log(movements.includes(-130));
+console.log(movements.some(cond));
+console.log(movements.every(cond));
+
+// flat => arr.flat(x) here x tells about the deepness that the array should be flatened.
+
+const arr = [1, 2, 3, [4, [5, 6]], [7, 8, 9], [[10, 11], 12]];
+
+console.log(arr.flat());
+console.log(arr.flat(2));
+
+// to check the balance of the bank
+
+// const totalMovMap = accounts.map(mov => mov.movements);
+// console.log(totalMovMap);
+
+// const totalMov = totalMovMap.flat();
+// console.log(totalMov);
+
+// const BankBalance = totalMov.reduce((acc, amt) => acc + amt);
+// console.log(BankBalance);
+
+// same as above commented code
+
+const overallBalance = accounts
+  .map(account => account.movements)
+  .flat()
+  .reduce((acc, amt) => acc + amt);
+console.log(overallBalance);
+
+// flatMap => includes fumctionalitites of both flat and map methods
+// can only be applied for deepness of level 1 (i.e.) [[1,3,2],4,5,6,7]
+//doesn't work for [1, 2, 3, [4, [5, 6]], [7, 8, 9], [[10, 11], 12]]
+
+const overallBalnc = accounts
+  .flatMap(account => account.movements)
+  .reduce((acc, amt) => acc + amt);
+console.log(overallBalnc);
+
+const sorted = movements.sort((a, b) => a > b);
+console.log(sorted);
